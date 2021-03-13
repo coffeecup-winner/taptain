@@ -5,6 +5,7 @@
 #include "Colors.h"
 #include "CommandBuffer.h"
 #include "Error.h"
+#include "Widget.h"
 
 // For Arduino Uno
 #define LCD_CS A3
@@ -18,21 +19,30 @@
 
 LCDWIKI_KBV g_lcd(ILI9486, LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 
+Widget widget[6];
+
 void setup() 
 {
     g_lcd.Init_LCD();
     g_lcd.Fill_Screen(COLOR_BACKGROUND);
-    g_lcd.Set_Text_Mode(0);
 
-    g_lcd.Set_Text_Back_colour(COLOR_BACKGROUND);
-    g_lcd.Set_Text_colour(COLOR_CONTENT_PRIMARY);
-    g_lcd.Set_Text_Size(3);
-    g_lcd.Print_String("Hello, World!", 0, 0);
+    widget[0].SetName("01234567890123456789");
+    widget[0].Draw(g_lcd, 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
 
-    g_lcd.Set_Draw_color(COLOR_MAGENTA);
-    g_lcd.Fill_Round_Rectangle(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 5);
-    g_lcd.Set_Draw_color(COLOR_BACKGROUND);
-    g_lcd.Fill_Round_Rectangle(10, 10, SCREEN_WIDTH / 2 - 10, SCREEN_HEIGHT / 2 - 10, 5);
+    widget[1].SetName("TEST WIDGET");
+    widget[1].Draw(g_lcd, SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
+
+    widget[2].SetName("MORE TESTS");
+    widget[2].Draw(g_lcd, 0, SCREEN_HEIGHT / 3, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
+
+    widget[3].SetName("RUN A PROCESS");
+    widget[3].Draw(g_lcd, SCREEN_WIDTH / 2,  SCREEN_HEIGHT / 3, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
+
+    widget[4].SetName("BREW SOME TEA");
+    widget[4].Draw(g_lcd, 0, 2 * SCREEN_HEIGHT / 3, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
+
+    widget[5].SetName("LAUNCH THE SATELLITE");
+    widget[5].Draw(g_lcd, SCREEN_WIDTH / 2, 2 * SCREEN_HEIGHT / 3, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3);
 
     Serial.begin(57600);
     while (!Serial);
