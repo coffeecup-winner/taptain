@@ -13,45 +13,45 @@
 
 template <int Size>
 class CommandBuffer {
-    CircularBuffer<Size> buffer;
-    uint8_t bEscape;
+    CircularBuffer<Size> m_buffer;
+    uint8_t m_bEscape;
 
 public:
     void Put(const uint8_t data)
     {
         switch (data) {
             case 0x00:
-                if (bEscape) {
-                    buffer.Put(data);
-                    bEscape = false;
+                if (m_bEscape) {
+                    m_buffer.Put(data);
+                    m_bEscape = false;
                 } else {
-                    buffer.Commit();
+                    m_buffer.Commit();
                 }
                 break;
             case 0xff:
-                if (bEscape) {
-                    buffer.Put(data);
-                    bEscape = false;
+                if (m_bEscape) {
+                    m_buffer.Put(data);
+                    m_bEscape = false;
                 } else {
-                    bEscape = true;
+                    m_bEscape = true;
                 }
                 break;
             default:
-                if (bEscape) {
+                if (m_bEscape) {
                     Error("Invalid packet");
                 }
-                buffer.Put(data);
+                m_buffer.Put(data);
                 break;
         }
     }
 
     bool HasData() const
     {
-        return buffer.HasData();
+        return m_buffer.HasData();
     }
 
-    bool GetData(uint8_t* data)
+    bool GetData(uint8_t* pData)
     {
-        return buffer.GetData(data);
+        return m_buffer.GetData(pData);
     }
 };
