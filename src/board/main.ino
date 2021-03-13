@@ -1,7 +1,7 @@
 #include <LCDWIKI_GUI.h>
 #include <LCDWIKI_KBV.h>
 
-#include "CircularBuffer.h"
+#include "CommandBuffer.h"
 #include "Error.h"
 
 // For Arduino Uno
@@ -37,17 +37,12 @@ void setup()
     g_lcd.Set_Draw_color(0xffff);
 }
 
-CircularBuffer<128> cmdBuffer;
+CommandBuffer<128> cmdBuffer;
 
 void serialEvent()
 {
     while (Serial.available()) {
-        uint8_t byte = (uint8_t)Serial.read();
-        if (byte != 0xa) {
-            cmdBuffer.Put(byte);
-        } else {
-            cmdBuffer.Commit();
-        }
+        cmdBuffer.Put((uint8_t)Serial.read());
     }
 }
 
