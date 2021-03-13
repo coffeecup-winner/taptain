@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#define COLOR_PATTERN_SOLARIZED_DARK
+#include "Config.h"
 #include "Colors.h"
 
 constexpr uint16_t TEXT_WIDTH = 5;

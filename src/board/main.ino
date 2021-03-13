@@ -1,27 +1,22 @@
 #include <LCDWIKI_GUI.h>
 #include <LCDWIKI_KBV.h>
+#include <TouchScreen.h>
 
-#define COLOR_PATTERN_SOLARIZED_DARK
+#include "Config.h"
 #include "Colors.h"
 #include "CommandBuffer.h"
 #include "Error.h"
 #include "Widget.h"
 
-// For Arduino Uno
-#define LCD_CS A3
-#define LCD_CD A2
-#define LCD_WR A1
-#define LCD_RD A0
-#define LCD_RESET A4
-
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 480
 
 LCDWIKI_KBV g_lcd(ILI9486, LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
+TouchScreen g_touchscreen(TS_XP, TS_YP, TS_XM, TS_YM, TS_RESISTANCE);
 
 Widget widget[6];
 
-void setup() 
+void setup()
 {
     g_lcd.Init_LCD();
     g_lcd.Fill_Screen(COLOR_BACKGROUND);
@@ -59,6 +54,9 @@ void serialEvent()
     }
 }
 
+#define MINPRESSURE 10
+#define MAXPRESSURE 1000
+
 void loop()
 {
     uint8_t x;
@@ -67,5 +65,15 @@ void loop()
         uint8_t y;
         assert(cmdBuffer.GetData(&y));
         g_lcd.Draw_Pixel(x, y);
+    }
+    const TSPoint p = g_touchscreen.getPoint();
+    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) 
+    {
+        const uint16_t x = map(p.x, TS_XLO, TS_XHI, 0, g_lcd.Get_Display_Width());
+        const uint16_t y = map(p.y, TS_YLO, TS_YHI, 0, g_lcd.Get_Display_Height());
+        Serial.print("X: ");
+        Serial.println(x, DEC);
+        Serial.print("Y: ");
+        Serial.println(y, DEC);
     }
 }
