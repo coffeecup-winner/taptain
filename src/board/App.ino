@@ -31,21 +31,12 @@ void setup()
     g_lcd.Init_LCD();
     g_lcd.Fill_Screen(COLOR_BACKGROUND);
 
-    g_widgets[0].SetName("01234567890123456789");
-    g_widgets[1].SetName("TEST WIDGET");
-    g_widgets[2].SetName("MORE TESTS");
-    g_widgets[3].SetName("RUN A PROCESS");
-    g_widgets[4].SetName("BREW SOME TEA");
-    g_widgets[5].SetName("LAUNCH THE SATELLITE");
-
     for (uint8_t i = 0; i < WIDGETS_COUNT; i++) {
         g_widgets[i].Draw(g_lcd);
     }
 
     Serial.begin(57600);
     while (!Serial);
-
-    g_lcd.Set_Draw_color(COLOR_GREEN);
 }
 
 void serialEvent()
@@ -58,11 +49,19 @@ void serialEvent()
 void loop()
 {
     // I/O commands
-    uint8_t x;
-    if (g_cmdBuffer.GetData(&x)) {
-        uint8_t y;
-        assert(g_cmdBuffer.GetData(&y));
-        g_lcd.Draw_Pixel(x, y);
+    Command cmd;
+    while (g_cmdBuffer.GetCommand(&cmd)) {
+        switch (cmd.type) {
+            case Command::Type::Init:
+                g_widgets[cmd.init.iWidget].SetName(cmd.init.name);
+                g_widgets[cmd.init.iWidget].Reset();
+                break;
+            default:
+                Error("Unhandled command");
+                break;
+        }
+        Serial.write("OK");
+        Serial.flush();
     }
 
     // User input

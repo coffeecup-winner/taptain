@@ -34,6 +34,7 @@ public:
         , m_drawFlags(DrawFlags::All)
     { }
 
+    void Reset();
     void SetName(const char* name);
 
     void Tap();

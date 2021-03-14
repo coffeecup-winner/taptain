@@ -3,7 +3,10 @@
 void Error(const char* str) {
     Serial.print("ERROR: ");
     Serial.println(str);
-    while (1);
+    Serial.flush();
+    while (1) {
+        delay(10);
+    }
 }
 
 void assert(const bool condition) {

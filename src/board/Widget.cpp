@@ -9,6 +9,12 @@
 constexpr uint16_t TEXT_WIDTH = 5;
 constexpr uint16_t TEXT_HEIGHT = 7;
 
+void Widget::Reset()
+{
+    m_state = State::Default;
+    m_drawFlags = DrawFlags::All;
+}
+
 void Widget::SetName(const char* name)
 {
     strncpy(m_name, name, MAX_TEXT_LEN);
@@ -70,6 +76,13 @@ void Widget::Draw(const LCDWIKI_KBV& lcd)
     }
 
     if (m_drawFlags & DrawFlags::Text) {
+        lcd.Fill_Rect(
+            m_x + BORDER_PADDING * 2 + BORDER_WIDTH,
+            m_y + m_height - BORDER_PADDING * 2 - BORDER_WIDTH - TEXT_HEIGHT,
+            m_width - BORDER_WIDTH * 2 - BORDER_PADDING * 4,
+            TEXT_HEIGHT,
+            COLOR_BACKGROUND);
+
         lcd.Set_Text_Mode(1);
         lcd.Set_Text_Back_colour(COLOR_BACKGROUND);
         lcd.Set_Text_colour(COLOR_CONTENT_PRIMARY);

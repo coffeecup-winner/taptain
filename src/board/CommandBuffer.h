@@ -2,14 +2,26 @@
 
 #include "CircularBuffer.h"
 
-// Command buffer allows receiving arbitrary byte packets from the host,
-// decoding them as follows:
+// The command buffer allows receiving command packets from the host,
+// decoding data as follows and then parsing the commands:
 // 0x00 - end of packet
 // 0xff - escape byte:
 //   * 0x00 - 0x00
 //   * 0xff - 0xff
 //   * 0x01..0xfe - invalid packet
 // 0x01..0xfe - 0x01..0xfe
+
+struct Command {
+    enum class Type : uint8_t {
+        Init = 0,
+    } type;
+    union {
+        struct {
+            uint8_t iWidget;
+            char name[21];
+        } init;
+    };
+};
 
 template <int Size>
 class CommandBuffer {
@@ -50,8 +62,23 @@ public:
         return m_buffer.HasData();
     }
 
-    bool GetData(uint8_t* pData)
+    bool GetCommand(Command* pCommand)
     {
-        return m_buffer.GetData(pData);
+        Command::Type type;
+        if (!m_buffer.GetData((uint8_t*)&type)) {
+            return false;
+        }
+        pCommand->type = type;
+        switch (type) {
+            case Command::Type::Init:
+                assert(m_buffer.GetData(&pCommand->init.iWidget));
+                for (uint8_t i = 0; i < sizeof(Command::init.name); i++) {
+                    assert(m_buffer.GetData(&pCommand->init.name[i]));
+                }
+                return true;
+            default:
+                Error("Invalid command type received from host");
+                return false;
+        }
     }
 };

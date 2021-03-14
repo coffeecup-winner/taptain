@@ -1,6 +1,14 @@
-use std::{io::{Read, Write}, time::Duration};
+use std::{
+    ffi::CString,
+    io::{Read, Write},
+    time::Duration,
+};
 
 use serial::SerialPort;
+
+mod command;
+
+use command::Command;
 
 // Packet-encode the data (see CommandBuffer.h)
 fn encode(buf: &[u8]) -> Vec<u8> {
@@ -34,15 +42,33 @@ fn start(mut port: serial::SystemPort) -> std::io::Result<()> {
 
     port.set_timeout(Duration::from_millis(10))?;
 
-    for x in 0..=255u8 {
-        for y in 0..=255u8 {
-            port.write(&encode(&[x, y]))?;
-            let mut data = [0u8; 1024];
-            match port.read(&mut data) {
-                Ok(_) => panic!("{}", String::from_utf8_lossy(&data)),
-                Err(err) if err.kind() == std::io::ErrorKind::TimedOut => {},
-                Err(err) => return Err(err),
-            }
+    let init = vec![
+        Command::Init(0, "01234567890123456789".to_owned()),
+        Command::Init(1, "TEST WIDGET".to_owned()),
+        Command::Init(2, "MORE TESTS".to_owned()),
+        Command::Init(3, "RUN A PROCESS".to_owned()),
+        Command::Init(4, "BREW SOME TEA".to_owned()),
+        Command::Init(5, "LAUNCH THE SATELLITE".to_owned()),
+    ];
+
+    for cmd in init {
+        port.set_timeout(Duration::from_millis(1000))?;
+        port.write(&encode(&cmd.to_protocol_bytes()))?;
+        let mut data = [0u8; 1024];
+        let result = match port.read(&mut data) {
+            Ok(_) => CString::new(
+                data.iter()
+                    .cloned()
+                    .take_while(|b| *b != 0)
+                    .collect::<Vec<u8>>(),
+            )
+            .expect("Failed to parse a c-string")
+            .into_string()
+            .expect("Failed to convert a c-string into a string"),
+            Err(err) => return Err(err),
+        };
+        if result != "OK" {
+            panic!("{}", result);
         }
     }
 
@@ -52,7 +78,8 @@ fn start(mut port: serial::SystemPort) -> std::io::Result<()> {
 fn main() {
     match std::env::args().nth(1) {
         Some(arg) => {
-            let port = serial::open(&arg).expect(&format!("Failed to open the serial port {}", arg));
+            let port =
+                serial::open(&arg).expect(&format!("Failed to open the serial port {}", arg));
             start(port).expect("Port communication failed");
         }
         None => {}
