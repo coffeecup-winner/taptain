@@ -1,14 +1,28 @@
 #pragma once
 
-#include "IDrawable.h"
+#include <LCDWIKI_KBV.h>
 
-class Widget : public IDrawable {
+#include <stdint.h>
+
+class Widget {
     static constexpr uint16_t MAX_TEXT_LEN = 21;
 
+    const uint16_t m_x;
+    const uint16_t m_y;
+    const uint16_t m_width;
+    const uint16_t m_height;
     char m_name[MAX_TEXT_LEN];
 
 public:
-    void Draw(const LCDWIKI_KBV& lcd, const uint16_t x, const uint16_t y, const uint16_t w, const uint16_t h) override;
+    Widget(const uint16_t x, const uint16_t y, const uint16_t width, const uint16_t height)
+        : m_x(x)
+        , m_y(y)
+        , m_width(width)
+        , m_height(height)
+        , m_name()
+    { }
 
     void SetName(const char* name);
+
+    void Draw(const LCDWIKI_KBV& lcd);
 };
