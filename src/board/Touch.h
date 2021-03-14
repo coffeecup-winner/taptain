@@ -9,7 +9,7 @@ class Touch {
     // Touchscreen sensivity
     constexpr static uint16_t TS_MINPRESSURE = 10;
     constexpr static uint16_t TS_MAXPRESSURE = 1000;
-    constexpr static unsigned long TS_TIME_DELAY_MS = 30;
+    constexpr static unsigned long TS_TIME_DELAY_MS = 25;
 
     TouchScreen m_touchscreen;
     const uint16_t m_width;
@@ -37,6 +37,8 @@ public:
     template <typename TFunc>
     uint16_t GetTouchIndex(TFunc transform) {
         const TSPoint p = m_touchscreen.getPoint();
+        pinMode(TS_XM, OUTPUT);
+        pinMode(TS_YP, OUTPUT);
         if (p.z > TS_MINPRESSURE && p.z < TS_MAXPRESSURE) {
             m_lastTouchMillis = millis();
             const uint16_t mappedX = map(p.x, TS_XLO, TS_XHI, 0, m_width);
