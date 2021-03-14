@@ -15,7 +15,8 @@
 LCDWIKI_KBV g_lcd(ILI9486, LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 Touch g_touch(g_lcd.Get_Display_Width(), g_lcd.Get_Display_Height());
 
-Widget g_widgets[6] = {
+constexpr uint8_t WIDGETS_COUNT = 6;
+Widget g_widgets[WIDGETS_COUNT] = {
     Widget(0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3),
     Widget(SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3),
     Widget(0, SCREEN_HEIGHT / 3, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 3),
@@ -37,12 +38,9 @@ void setup()
     g_widgets[4].SetName("BREW SOME TEA");
     g_widgets[5].SetName("LAUNCH THE SATELLITE");
 
-    g_widgets[0].Draw(g_lcd);
-    g_widgets[1].Draw(g_lcd);
-    g_widgets[2].Draw(g_lcd);
-    g_widgets[3].Draw(g_lcd);
-    g_widgets[4].Draw(g_lcd);
-    g_widgets[5].Draw(g_lcd);
+    for (uint8_t i = 0; i < WIDGETS_COUNT; i++) {
+        g_widgets[i].Draw(g_lcd);
+    }
 
     Serial.begin(57600);
     while (!Serial);
@@ -59,19 +57,27 @@ void serialEvent()
 
 void loop()
 {
+    // I/O commands
     uint8_t x;
     if (g_cmdBuffer.GetData(&x)) {
         uint8_t y;
         assert(g_cmdBuffer.GetData(&y));
         g_lcd.Draw_Pixel(x, y);
     }
+
+    // User input
     const uint16_t iTouch = g_touch.GetTouchIndex([](const uint16_t x, const uint16_t y) {
         const uint8_t iX = x / (SCREEN_WIDTH / 2);
         const uint8_t iY = y / (SCREEN_HEIGHT / 3);
         return (2 - iY) * 2 + iX;
     });
+
     if (iTouch != Touch::INVALID_INDEX) {
-        // TODO: touch
-        g_widgets[iTouch].Draw(g_lcd);
+        g_widgets[iTouch].Tap();
+    }
+
+    // Redrawing
+    for (uint8_t i = 0; i < WIDGETS_COUNT; i++) {
+        g_widgets[i].Draw(g_lcd);
     }
 }
