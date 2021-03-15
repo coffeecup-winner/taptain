@@ -2,10 +2,13 @@
 #include <LCDWIKI_KBV.h>
 #include <TouchScreen.h>
 
+#include <string.h>
+
 #include "Config.h"
 #include "Colors.h"
 #include "CommandBuffer.h"
 #include "Error.h"
+#include "Request.h"
 #include "Touch.h"
 #include "Widget.h"
 
@@ -84,7 +87,13 @@ void loop()
     });
 
     if (iTouch != Touch::INVALID_INDEX) {
-        g_widgets[iTouch].Tap();
+        Request request;
+        memset(&request, 0, sizeof(request));
+        g_widgets[iTouch].Tap(&request);
+        if (request.type != Request::Type::None) {
+            request.iWidget = iTouch;
+            Serial.write((const uint8_t*)&request, sizeof(request));
+        }
     }
 
     // Redrawing

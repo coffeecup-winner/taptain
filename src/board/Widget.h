@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+#include "Request.h"
+
 class Widget {
     static constexpr uint16_t MAX_TEXT_LEN = 21;
 
@@ -37,6 +39,6 @@ public:
     void Reset();
     void SetName(const char* name);
 
-    void Tap();
+    void Tap(Request* request);
     void Draw(const LCDWIKI_KBV& lcd);
 };

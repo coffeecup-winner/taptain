@@ -1,7 +1,19 @@
+#[derive(Debug)]
 pub enum Command {
     Init(u8, String),
     BeginBatch,
     EndBatch,
+}
+
+#[derive(Debug)]
+pub enum RequestType {
+    Launch,
+}
+
+#[derive(Debug)]
+pub struct Request {
+    type_: RequestType,
+    i_widget: u8,
 }
 
 impl Command {
@@ -31,5 +43,21 @@ impl Command {
             }
         }
         result
+    }
+}
+
+impl Request {
+    pub fn from_bytes(bytes: &[u8]) -> Request {
+        if bytes.len() != 2 {
+            panic!("Invalid request size");
+        }
+        let type_ = match bytes[0] {
+            1 => RequestType::Launch,
+            _ => panic!("Invalid request type {}", bytes[0]),
+        };
+        Request {
+            type_,
+            i_widget: bytes[1],
+        }
     }
 }

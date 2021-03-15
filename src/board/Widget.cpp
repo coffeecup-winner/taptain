@@ -21,12 +21,13 @@ void Widget::SetName(const char* name)
     m_drawFlags |= DrawFlags::Text;
 }
 
-void Widget::Tap()
+void Widget::Tap(Request* request)
 {
     switch (m_state) {
         case State::Default:
             m_state = State::Active;
             m_drawFlags |= DrawFlags::Border;
+            request->type = Request::Type::Launch;
             break;
         case State::Active:
             m_state = State::Default;

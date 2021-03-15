@@ -6,7 +6,7 @@ use std::{
 
 use serial::{SerialPort, SystemPort};
 
-use crate::command::Command;
+use crate::protocol::{Command, Request};
 
 pub struct Connection {
     port: SystemPort,
@@ -42,11 +42,30 @@ impl Connection {
             self.send_command(&Command::EndBatch)?;
         }
 
-        let result = self.port_read()?;
+        let result = self.port_read_string()?;
 
         Ok(if result != "OK" {
             panic!("{}", result);
         })
+    }
+
+    pub fn get_next_request(&mut self) -> std::io::Result<Request> {
+        self.port.set_timeout(Duration::from_millis(50))?;
+        let mut data = [0u8; 2];
+        let mut idx = 0;
+        loop {
+            match self.port.read(&mut data[idx..]) {
+                Ok(read) => {
+                    if idx + read == data.len() {
+                        return Ok(Request::from_bytes(&data));
+                    } else {
+                        idx += read;
+                    }
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::TimedOut => continue,
+                Err(e) => return Err(e),
+            }
+        }
     }
 
     fn send_command(&mut self, cmd: &Command) -> std::io::Result<()> {
@@ -54,17 +73,17 @@ impl Connection {
         for _ in 0..3 {
             match self.port.write(&Self::encode(&cmd.to_protocol_bytes())) {
                 Ok(_) => break,
-                Err(err) if err.kind() == std::io::ErrorKind::TimedOut => {
+                Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
                     eprintln!("Warning: timed out sending the command");
                     continue;
                 }
-                Err(err) => return Err(err),
+                Err(e) => return Err(e),
             }
         }
         Ok(())
     }
 
-    fn port_read(&mut self) -> Result<String, std::io::Error> {
+    fn port_read_string(&mut self) -> std::io::Result<String> {
         self.port.set_timeout(Duration::from_secs(1))?;
         let mut data = [0u8; 1024];
         let result = match self.port.read(&mut data) {
@@ -77,7 +96,7 @@ impl Connection {
             .expect("Failed to parse a c-string")
             .into_string()
             .expect("Failed to convert a c-string into a string"),
-            Err(err) => return Err(dbg!(err)),
+            Err(e) => return Err(dbg!(e)),
         };
         Ok(result)
     }

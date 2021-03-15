@@ -1,8 +1,8 @@
-mod command;
 mod comms;
+mod protocol;
 
-use command::Command;
 use comms::Connection;
+use protocol::Command;
 
 fn start(mut connection: Connection) -> std::io::Result<()> {
     connection.send(&[
@@ -14,7 +14,10 @@ fn start(mut connection: Connection) -> std::io::Result<()> {
         Command::Init(5, "LAUNCH THE SATELLITE".to_owned()),
     ])?;
 
-    Ok(())
+    loop {
+        let request = connection.get_next_request()?;
+        dbg!(request);
+    }
 }
 
 fn main() {
