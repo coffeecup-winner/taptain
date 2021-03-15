@@ -39,16 +39,16 @@ void setup()
     while (!Serial);
 }
 
-void serialEvent()
-{
-    while (Serial.available()) {
-        g_cmdBuffer.Put((uint8_t)Serial.read());
-    }
-}
+uint8_t g_bIsInBatch = false;
 
 void loop()
 {
-    // I/O commands
+    // Reading command data
+    while (Serial.available()) {
+        g_cmdBuffer.Put((uint8_t)Serial.read());
+    }
+
+    // Processing commands
     Command cmd;
     while (g_cmdBuffer.GetCommand(&cmd)) {
         switch (cmd.type) {
@@ -56,12 +56,24 @@ void loop()
                 g_widgets[cmd.init.iWidget].SetName(cmd.init.name);
                 g_widgets[cmd.init.iWidget].Reset();
                 break;
+            case Command::Type::BeginBatch:
+                g_bIsInBatch = true;
+                break;
+            case Command::Type::EndBatch:
+                g_bIsInBatch = false;
+                break;
             default:
                 Error("Unhandled command");
                 break;
         }
-        Serial.write("OK");
-        Serial.flush();
+        
+        if (!g_bIsInBatch) {
+            Serial.write("OK");
+        }
+    }
+
+    if (g_bIsInBatch) {
+        return;
     }
 
     // User input

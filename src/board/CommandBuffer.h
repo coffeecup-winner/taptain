@@ -14,6 +14,8 @@
 struct Command {
     enum class Type : uint8_t {
         Init = 0,
+        BeginBatch = 1,
+        EndBatch = 2,
     } type;
     union {
         struct {
@@ -75,6 +77,9 @@ public:
                 for (uint8_t i = 0; i < sizeof(Command::init.name); i++) {
                     assert(m_buffer.GetData(&pCommand->init.name[i]));
                 }
+                return true;
+            case Command::Type::BeginBatch:
+            case Command::Type::EndBatch:
                 return true;
             default:
                 Error("Invalid command type received from host");

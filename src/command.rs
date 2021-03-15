@@ -1,5 +1,7 @@
 pub enum Command {
     Init(u8, String),
+    BeginBatch,
+    EndBatch,
 }
 
 impl Command {
@@ -20,6 +22,12 @@ impl Command {
                 }
                 result.push(0);
                 assert!(result.len() == 23);
+            }
+            Command::BeginBatch => {
+                result.push(1);
+            }
+            Command::EndBatch => {
+                result.push(2);
             }
         }
         result
