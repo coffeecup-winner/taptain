@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#include "Request.h"
+#include "Message.h"
 
 class Widget {
     static constexpr uint16_t MAX_TEXT_LEN = 21;
@@ -14,6 +14,8 @@ class Widget {
     const uint16_t m_width;
     const uint16_t m_height;
     char m_name[MAX_TEXT_LEN];
+    uint8_t m_prevPercentProgress;
+    uint8_t m_percentProgress;
     enum class State : uint8_t {
         Default = 0,
         Active,
@@ -22,6 +24,7 @@ class Widget {
         None = 0x00,
         Border = 0x01,
         Text = 0x02,
+        Progress = 0x04,
         All = 0xff,
     } m_drawFlags;
 
@@ -32,13 +35,16 @@ public:
         , m_width(width)
         , m_height(height)
         , m_name()
+        , m_prevPercentProgress(0)
+        , m_percentProgress(0)
         , m_state(State::Default)
         , m_drawFlags(DrawFlags::All)
     { }
 
     void Reset();
     void SetName(const char* name);
+    void SetProgress(const uint8_t percent);
 
-    void Tap(Request* request);
+    void Tap(Message* message);
     void Draw(const LCDWIKI_KBV& lcd);
 };

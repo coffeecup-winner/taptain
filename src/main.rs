@@ -1,7 +1,9 @@
 mod comms;
+mod events;
 mod protocol;
 
 use comms::Connection;
+use events::EventProcessor;
 use protocol::Command;
 
 fn start(mut connection: Connection) -> std::io::Result<()> {
@@ -14,10 +16,17 @@ fn start(mut connection: Connection) -> std::io::Result<()> {
         Command::Init(5, "LAUNCH THE SATELLITE".to_owned()),
     ])?;
 
-    loop {
-        let request = connection.get_next_request()?;
-        dbg!(request);
-    }
+    let mut event_processor = EventProcessor::new(connection);
+
+    event_processor.register_launch_handler(Box::new(|conn, i_widget| {
+        for i in 1..=10 {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            conn.send(&[Command::Progress(i_widget, i * 10)])?;
+        }
+        Ok(())
+    }));
+
+    event_processor.run_event_loop()
 }
 
 fn main() {

@@ -3,17 +3,14 @@ pub enum Command {
     Init(u8, String),
     BeginBatch,
     EndBatch,
+    Progress(u8, u8),
 }
 
 #[derive(Debug)]
-pub enum RequestType {
-    Launch,
-}
-
-#[derive(Debug)]
-pub struct Request {
-    type_: RequestType,
-    i_widget: u8,
+pub enum Message {
+    OK,
+    Error,
+    Launch(u8),
 }
 
 impl Command {
@@ -41,23 +38,26 @@ impl Command {
             Command::EndBatch => {
                 result.push(2);
             }
+            Command::Progress(i_widget, percent) => {
+                result.push(3);
+                result.push(*i_widget);
+                result.push(*percent);
+            }
         }
         result
     }
 }
 
-impl Request {
-    pub fn from_bytes(bytes: &[u8]) -> Request {
+impl Message {
+    pub fn from_bytes(bytes: &[u8]) -> Message {
         if bytes.len() != 2 {
-            panic!("Invalid request size");
+            panic!("Invalid message size");
         }
-        let type_ = match bytes[0] {
-            1 => RequestType::Launch,
-            _ => panic!("Invalid request type {}", bytes[0]),
-        };
-        Request {
-            type_,
-            i_widget: bytes[1],
+        match bytes[0] {
+            1 => Message::OK,
+            2 => Message::Error,
+            3 => Message::Launch(bytes[1]),
+            _ => panic!("Invalid message type {}", bytes[0]),
         }
     }
 }

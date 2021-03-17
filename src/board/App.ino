@@ -8,7 +8,7 @@
 #include "Colors.h"
 #include "CommandBuffer.h"
 #include "Error.h"
-#include "Request.h"
+#include "Message.h"
 #include "Touch.h"
 #include "Widget.h"
 
@@ -65,13 +65,18 @@ void loop()
             case Command::Type::EndBatch:
                 g_bIsInBatch = false;
                 break;
+            case Command::Type::Progress:
+                g_widgets[cmd.progress.iWidget].SetProgress(cmd.progress.percent);
+                break;
             default:
                 Error("Unhandled command");
                 break;
         }
-        
+
         if (!g_bIsInBatch) {
-            Serial.write("OK");
+            Message message = {};
+            message.type = Message::Type::OK;
+            Serial.write((const uint8_t*)&message, sizeof(message));
         }
     }
 
@@ -87,12 +92,11 @@ void loop()
     });
 
     if (iTouch != Touch::INVALID_INDEX) {
-        Request request;
-        memset(&request, 0, sizeof(request));
-        g_widgets[iTouch].Tap(&request);
-        if (request.type != Request::Type::None) {
-            request.iWidget = iTouch;
-            Serial.write((const uint8_t*)&request, sizeof(request));
+        Message message = {};
+        g_widgets[iTouch].Tap(&message);
+        if (message.type != Message::Type::None) {
+            message.iWidget = iTouch;
+            Serial.write((const uint8_t*)&message, sizeof(message));
         }
     }
 

@@ -14,14 +14,19 @@
 struct Command {
     enum class Type : uint8_t {
         Init = 0,
-        BeginBatch = 1,
-        EndBatch = 2,
+        BeginBatch,
+        EndBatch,
+        Progress,
     } type;
     union {
         struct {
             uint8_t iWidget;
             char name[21];
         } init;
+        struct {
+            uint8_t iWidget;
+            uint8_t percent;
+        } progress;
     };
 };
 
@@ -80,6 +85,10 @@ public:
                 return true;
             case Command::Type::BeginBatch:
             case Command::Type::EndBatch:
+                return true;
+            case Command::Type::Progress:
+                assert(m_buffer.GetData(&pCommand->progress.iWidget));
+                assert(m_buffer.GetData(&pCommand->progress.percent));
                 return true;
             default:
                 Error("Invalid command type received from host");

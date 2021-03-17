@@ -6,10 +6,11 @@ use std::{
 
 use serial::{SerialPort, SystemPort};
 
-use crate::protocol::{Command, Request};
+use crate::protocol::{Command, Message};
 
 pub struct Connection {
     port: SystemPort,
+    message_queue: Vec<Message>,
 }
 
 impl Connection {
@@ -26,7 +27,10 @@ impl Connection {
             Ok(())
         })?;
 
-        Ok(Connection { port })
+        Ok(Connection {
+            port,
+            message_queue: vec![],
+        })
     }
 
     pub fn send(&mut self, commands: &[Command]) -> std::io::Result<()> {
@@ -42,14 +46,24 @@ impl Connection {
             self.send_command(&Command::EndBatch)?;
         }
 
-        let result = self.port_read_string()?;
-
-        Ok(if result != "OK" {
-            panic!("{}", result);
-        })
+        let mut new_queue = vec![];
+        loop {
+            let message = self.get_next_message()?;
+            match message {
+                Message::OK => {
+                    self.message_queue.extend(new_queue);
+                    return Ok(());
+                }
+                _ => new_queue.push(message),
+            }
+        }
     }
 
-    pub fn get_next_request(&mut self) -> std::io::Result<Request> {
+    pub fn get_next_message(&mut self) -> std::io::Result<Message> {
+        if let Some(message) = self.message_queue.pop() {
+            return Ok(message);
+        }
+
         self.port.set_timeout(Duration::from_millis(50))?;
         let mut data = [0u8; 2];
         let mut idx = 0;
@@ -57,7 +71,11 @@ impl Connection {
             match self.port.read(&mut data[idx..]) {
                 Ok(read) => {
                     if idx + read == data.len() {
-                        return Ok(Request::from_bytes(&data));
+                        let message = Message::from_bytes(&data);
+                        if let Message::Error = message {
+                            panic!(self.port_read_string()?);
+                        }
+                        return Ok(dbg!(message));
                     } else {
                         idx += read;
                     }
@@ -71,7 +89,10 @@ impl Connection {
     fn send_command(&mut self, cmd: &Command) -> std::io::Result<()> {
         self.port.set_timeout(Duration::from_millis(100))?;
         for _ in 0..3 {
-            match self.port.write(&Self::encode(&cmd.to_protocol_bytes())) {
+            match self
+                .port
+                .write(&Self::encode(&dbg!(cmd).to_protocol_bytes()))
+            {
                 Ok(_) => break,
                 Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
                     eprintln!("Warning: timed out sending the command");
@@ -86,6 +107,7 @@ impl Connection {
     fn port_read_string(&mut self) -> std::io::Result<String> {
         self.port.set_timeout(Duration::from_secs(1))?;
         let mut data = [0u8; 1024];
+        // TODO: read until \n
         let result = match self.port.read(&mut data) {
             Ok(_) => CString::new(
                 data.iter()

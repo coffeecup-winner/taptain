@@ -21,17 +21,28 @@ void Widget::SetName(const char* name)
     m_drawFlags |= DrawFlags::Text;
 }
 
-void Widget::Tap(Request* request)
+void Widget::SetProgress(const uint8_t percent)
+{
+    m_prevPercentProgress = m_percentProgress;
+    m_percentProgress = percent;
+    m_drawFlags |= DrawFlags::Progress;
+}
+
+void Widget::Tap(Message* message)
 {
     switch (m_state) {
         case State::Default:
             m_state = State::Active;
-            m_drawFlags |= DrawFlags::Border;
-            request->type = Request::Type::Launch;
+            m_prevPercentProgress = m_percentProgress;
+            m_percentProgress = 0;
+            m_drawFlags |= DrawFlags::Border | DrawFlags::Progress;
+            message->type = Message::Type::Launch;
             break;
         case State::Active:
             m_state = State::Default;
-            m_drawFlags |= DrawFlags::Border;
+            m_prevPercentProgress = m_percentProgress;
+            m_percentProgress = 0;
+            m_drawFlags |= DrawFlags::Border | DrawFlags::Progress;
             break;
         default:
             Error("Unknown state");
@@ -76,17 +87,30 @@ void Widget::Draw(const LCDWIKI_KBV& lcd)
             borderColor);
     }
 
-    if (m_drawFlags & DrawFlags::Text) {
-        lcd.Fill_Rect(
-            m_x + BORDER_PADDING * 2 + BORDER_WIDTH,
-            m_y + m_height - BORDER_PADDING * 2 - BORDER_WIDTH - TEXT_HEIGHT,
-            m_width - BORDER_WIDTH * 2 - BORDER_PADDING * 4,
-            TEXT_HEIGHT,
-            COLOR_BACKGROUND);
+    if (m_drawFlags & DrawFlags::Progress && m_prevPercentProgress != m_percentProgress)
+    {
+        lcd.Set_Draw_color(m_prevPercentProgress < m_percentProgress ? COLOR_BACKGROUND_HIGHLIGHT : COLOR_BACKGROUND);
+        lcd.Fill_Rectangle(
+            m_x + BORDER_PADDING * 2 + BORDER_WIDTH + map(m_prevPercentProgress, 0, 100, 0, m_width - BORDER_PADDING * 4 - BORDER_WIDTH * 2),
+            m_y + BORDER_PADDING * 2 + BORDER_WIDTH,
+            m_x + BORDER_PADDING * 2 + BORDER_WIDTH + map(m_percentProgress, 0, 100, 0, m_width - BORDER_PADDING * 4 - BORDER_WIDTH * 2),
+            m_y + m_height - BORDER_PADDING * 2 - BORDER_WIDTH
+        );
+    }
+
+    if (m_drawFlags & (DrawFlags::Text | DrawFlags::Progress)) {
+        if (!(m_drawFlags & DrawFlags::Progress)) {
+            lcd.Fill_Rect(
+                m_x + BORDER_PADDING * 2 + BORDER_WIDTH,
+                m_y + m_height - BORDER_PADDING * 2 - BORDER_WIDTH - TEXT_HEIGHT,
+                m_width - BORDER_WIDTH * 2 - BORDER_PADDING * 4,
+                TEXT_HEIGHT,
+                COLOR_BACKGROUND);
+        }
 
         lcd.Set_Text_Mode(1);
         lcd.Set_Text_Back_colour(COLOR_BACKGROUND);
-        lcd.Set_Text_colour(COLOR_CONTENT_PRIMARY);
+        lcd.Set_Text_colour(m_state == State::Active ? COLOR_CONTENT_EMPHASIZED : COLOR_CONTENT_PRIMARY);
         lcd.Set_Text_Size(1);
         const uint16_t strWidth = strlen(m_name) * (TEXT_WIDTH + 1) - 1; // +1 space between letters, -1 last space
         const uint16_t maxWidth = m_width - BORDER_WIDTH * 2 - BORDER_PADDING * 4;
