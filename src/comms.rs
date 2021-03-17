@@ -50,24 +50,25 @@ impl Connection {
         loop {
             let message = self.get_next_message()?;
             match message {
-                Message::OK => {
+                None => {}
+                Some(Message::OK) => {
                     self.message_queue.extend(new_queue);
                     return Ok(());
                 }
-                _ => new_queue.push(message),
+                Some(message) => new_queue.push(message),
             }
         }
     }
 
-    pub fn get_next_message(&mut self) -> std::io::Result<Message> {
+    pub fn get_next_message(&mut self) -> std::io::Result<Option<Message>> {
         if let Some(message) = self.message_queue.pop() {
-            return Ok(message);
+            return Ok(Some(message));
         }
 
         self.port.set_timeout(Duration::from_millis(50))?;
         let mut data = [0u8; 2];
         let mut idx = 0;
-        loop {
+        for _ in 0..3 {
             match self.port.read(&mut data[idx..]) {
                 Ok(read) => {
                     if idx + read == data.len() {
@@ -75,7 +76,7 @@ impl Connection {
                         if let Message::Error = message {
                             panic!(self.port_read_string()?);
                         }
-                        return Ok(dbg!(message));
+                        return Ok(Some(dbg!(message)));
                     } else {
                         idx += read;
                     }
@@ -84,6 +85,7 @@ impl Connection {
                 Err(e) => return Err(e),
             }
         }
+        Ok(None)
     }
 
     fn send_command(&mut self, cmd: &Command) -> std::io::Result<()> {

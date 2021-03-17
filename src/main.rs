@@ -8,7 +8,7 @@ use protocol::Command;
 
 fn start(mut event_processor: EventProcessor) -> std::io::Result<()> {
     event_processor.register_init_handler(Box::new(|connection| {
-        connection.send(&[
+        connection.lock().unwrap().send(&[
             Command::Init(0, "01234567890123456789".to_owned()),
             Command::Init(1, "TEST WIDGET".to_owned()),
             Command::Init(2, "MORE TESTS".to_owned()),
@@ -20,10 +20,17 @@ fn start(mut event_processor: EventProcessor) -> std::io::Result<()> {
     }));
 
     event_processor.register_launch_handler(Box::new(|connection, i_widget| {
-        for i in 1..=10 {
-            std::thread::sleep(std::time::Duration::from_millis(100));
-            connection.send(&[Command::Progress(i_widget, i * 10)])?;
-        }
+        std::thread::spawn(move || -> std::io::Result<()> {
+            for i in 1..=10 {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                connection
+                    .lock()
+                    .unwrap()
+                    .send(&[Command::Progress(i_widget, i * 10)])?;
+            }
+            Ok(())
+        });
+        // TODO: track this thread
         Ok(())
     }));
 
