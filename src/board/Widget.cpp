@@ -39,9 +39,16 @@ void Widget::Tap(Message* message)
             message->type = Message::Type::Launch;
             break;
         case State::Active:
-            m_state = State::Paused;
-            m_drawFlags |= DrawFlags::Border;
-            message->type = Message::Type::Pause;
+            if (m_percentProgress == 100) {
+                m_state = State::Default;
+                m_prevPercentProgress = m_percentProgress;
+                m_percentProgress = 0;
+                m_drawFlags |= DrawFlags::Border | DrawFlags::Progress;
+            } else {
+                m_state = State::Paused;
+                m_drawFlags |= DrawFlags::Border;
+                message->type = Message::Type::Pause;
+            }
             break;
         case State::Paused:
             m_state = State::Default;
@@ -148,7 +155,10 @@ void Widget::Draw(const LCDWIKI_KBV& lcd)
 
         lcd.Set_Text_Mode(1);
         lcd.Set_Text_Back_colour(COLOR_BACKGROUND);
-        lcd.Set_Text_colour(m_state == State::Active ? COLOR_CONTENT_EMPHASIZED : COLOR_CONTENT_PRIMARY);
+        uint16_t textColor = m_percentProgress == 100 ? COLOR_GREEN
+                           : m_state == State::Active ? COLOR_CONTENT_EMPHASIZED
+                           : COLOR_CONTENT_PRIMARY;
+        lcd.Set_Text_colour(textColor);
         lcd.Set_Text_Size(1);
         const uint16_t strWidth = strlen(m_name) * (TEXT_WIDTH + 1) - 1; // +1 space between letters, -1 last space
         const uint16_t maxWidth = m_width - BORDER_WIDTH * 2 - BORDER_PADDING * 4;
