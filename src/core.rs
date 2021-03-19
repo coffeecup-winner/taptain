@@ -15,6 +15,25 @@ enum TaskState {
     Canceled,
 }
 
+// Task state trait to be used by the task thread
+trait TaskControl {
+    // This function will block if the task is paused
+    fn should_exit(&self) -> bool;
+}
+
+impl TaskControl for Arc<Mutex<TaskState>> {
+    fn should_exit(&self) -> bool {
+        loop {
+            let state = *self.lock().unwrap();
+            match state {
+                TaskState::Running => return false,
+                TaskState::Paused => std::thread::park(),
+                TaskState::Canceled => return true,
+            }
+        }
+    }
+}
+
 struct Task {
     pub state: Arc<Mutex<TaskState>>,
     pub join_handle: JoinHandle<std::io::Result<()>>,
@@ -30,6 +49,21 @@ impl Task {
         let state_ = state.clone();
         let join_handle = std::thread::spawn(move || f(state_));
         Task { state, join_handle }
+    }
+
+    pub fn pause(&self) {
+        *self.state.lock().unwrap() = TaskState::Paused;
+    }
+
+    pub fn resume(&self) {
+        *self.state.lock().unwrap() = TaskState::Running;
+        self.join_handle.thread().unpark();
+    }
+
+    pub fn cancel(self) -> std::io::Result<()> {
+        *self.state.lock().unwrap() = TaskState::Canceled;
+        self.join_handle.thread().unpark();
+        return self.join_handle.join().unwrap();
     }
 }
 
@@ -73,13 +107,8 @@ impl MessageHandler for TaptainBackend {
         let task = Task::start(move |state| -> std::io::Result<()> {
             for i in 1..=10 {
                 std::thread::sleep(std::time::Duration::from_millis(100));
-                loop {
-                    let state = *state.lock().unwrap();
-                    match state {
-                        TaskState::Running => break,
-                        TaskState::Paused => std::thread::park(),
-                        TaskState::Canceled => return Ok(()),
-                    }
+                if state.should_exit() {
+                    return Ok(());
                 }
                 connection
                     .lock()
@@ -95,7 +124,7 @@ impl MessageHandler for TaptainBackend {
     fn pause(&mut self, i_widget: u8) -> std::io::Result<()> {
         self.ensure_size_for_index(i_widget);
         if let Some(task) = self.tasks[i_widget as usize].as_ref() {
-            *task.state.lock().unwrap() = TaskState::Paused;
+            task.pause();
         }
         Ok(())
     }
@@ -103,8 +132,7 @@ impl MessageHandler for TaptainBackend {
     fn resume(&mut self, i_widget: u8) -> std::io::Result<()> {
         self.ensure_size_for_index(i_widget);
         if let Some(task) = self.tasks[i_widget as usize].as_ref() {
-            *task.state.lock().unwrap() = TaskState::Running;
-            task.join_handle.thread().unpark();
+            task.resume();
         }
         Ok(())
     }
@@ -112,9 +140,7 @@ impl MessageHandler for TaptainBackend {
     fn cancel(&mut self, i_widget: u8) -> std::io::Result<()> {
         self.ensure_size_for_index(i_widget);
         if let Some(task) = self.tasks[i_widget as usize].take() {
-            *task.state.lock().unwrap() = TaskState::Canceled;
-            task.join_handle.thread().unpark();
-            return task.join_handle.join().unwrap();
+            task.cancel()?;
         }
         Ok(())
     }
