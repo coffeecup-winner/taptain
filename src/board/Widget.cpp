@@ -134,12 +134,21 @@ void Widget::Draw(const LCDWIKI_KBV& lcd)
 
     if (m_drawFlags & DrawFlags::Progress && m_prevPercentProgress != m_percentProgress)
     {
-        lcd.Set_Draw_color(m_prevPercentProgress < m_percentProgress ? COLOR_BACKGROUND_HIGHLIGHT : COLOR_BACKGROUND);
+        uint8_t from, to;
+        if (m_prevPercentProgress < m_percentProgress) {
+            from = m_prevPercentProgress;
+            to = m_percentProgress;
+            lcd.Set_Draw_color(COLOR_BACKGROUND_HIGHLIGHT);
+        } else {
+            from = m_percentProgress;
+            to = m_prevPercentProgress;
+            lcd.Set_Draw_color(COLOR_BACKGROUND);
+        }
         lcd.Fill_Rectangle(
-            m_x + BORDER_PADDING * 2 + BORDER_WIDTH + map(m_prevPercentProgress, 0, 100, 0, m_width - BORDER_PADDING * 4 - BORDER_WIDTH * 2),
+            m_x + BORDER_PADDING * 2 + BORDER_WIDTH + map(from, 0, 100, 0, m_width - BORDER_PADDING * 4 - BORDER_WIDTH * 2),
             m_y + BORDER_PADDING * 2 + BORDER_WIDTH,
-            m_x + BORDER_PADDING * 2 + BORDER_WIDTH + map(m_percentProgress, 0, 100, 0, m_width - BORDER_PADDING * 4 - BORDER_WIDTH * 2),
-            m_y + m_height - BORDER_PADDING * 2 - BORDER_WIDTH
+            m_x + BORDER_PADDING * 2 + BORDER_WIDTH + map(to, 0, 100, 0, m_width - BORDER_PADDING * 4 - BORDER_WIDTH * 2) - 1,
+            m_y + m_height - BORDER_PADDING * 2 - BORDER_WIDTH - 1
         );
     }
 
@@ -166,7 +175,7 @@ void Widget::Draw(const LCDWIKI_KBV& lcd)
         lcd.Print_String(
             m_name,
             m_x + BORDER_PADDING * 2 + BORDER_WIDTH + strOffset,
-            m_y + m_height - BORDER_PADDING * 2 - BORDER_WIDTH - TEXT_HEIGHT);
+            m_y + m_height - BORDER_PADDING * 3 - BORDER_WIDTH - TEXT_HEIGHT);
     }
 
     m_drawFlags = DrawFlags::None;
