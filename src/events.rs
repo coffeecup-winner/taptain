@@ -8,6 +8,9 @@ pub trait MessageHandler {
     fn new(connection: AMConnection) -> Self;
     fn init(&mut self) -> std::io::Result<()>;
     fn launch(&mut self, i_widget: u8) -> std::io::Result<()>;
+    fn pause(&mut self, i_widget: u8) -> std::io::Result<()>;
+    fn resume(&mut self, i_widget: u8) -> std::io::Result<()>;
+    fn cancel(&mut self, i_widget: u8) -> std::io::Result<()>;
 }
 
 pub struct EventProcessor<MH: MessageHandler> {
@@ -37,6 +40,9 @@ impl<MH: MessageHandler> EventProcessor<MH> {
                 Some(Message::OK) => panic!("Programmer error: should be handled elsewhere"),
                 Some(Message::Error) => panic!("Programmer error: should be handler elsewhere"),
                 Some(Message::Launch(i_widget)) => self.handler.launch(i_widget)?,
+                Some(Message::Pause(i_widget)) => self.handler.pause(i_widget)?,
+                Some(Message::Resume(i_widget)) => self.handler.resume(i_widget)?,
+                Some(Message::Cancel(i_widget)) => self.handler.cancel(i_widget)?,
             }
         }
     }

@@ -39,10 +39,34 @@ void Widget::Tap(Message* message)
             message->type = Message::Type::Launch;
             break;
         case State::Active:
+            m_state = State::Paused;
+            m_drawFlags |= DrawFlags::Border;
+            message->type = Message::Type::Pause;
+            break;
+        case State::Paused:
             m_state = State::Default;
             m_prevPercentProgress = m_percentProgress;
             m_percentProgress = 0;
             m_drawFlags |= DrawFlags::Border | DrawFlags::Progress;
+            message->type = Message::Type::Cancel;
+            break;
+        default:
+            Error("Unknown state");
+            break;
+    }
+}
+
+void Widget::TapElsewhere(Message *message)
+{
+    switch (m_state) {
+        case State::Default:
+        case State::Active:
+            // Do nothing
+            break;
+        case State::Paused:
+            m_state = State::Active;
+            m_drawFlags |= DrawFlags::Border;
+            message->type = Message::Type::Resume;
             break;
         default:
             Error("Unknown state");
@@ -60,7 +84,21 @@ void Widget::Draw(const LCDWIKI_KBV& lcd)
     constexpr uint16_t BORDER_WIDTH = 7;
 
     if (m_drawFlags & DrawFlags::Border) {
-        uint16_t borderColor = m_state == State::Default ? COLOR_BLUE : COLOR_GREEN;
+        uint16_t borderColor;
+        switch (m_state) {
+            case State::Default:
+                borderColor = COLOR_BLUE;
+                break;
+            case State::Active:
+                borderColor = COLOR_GREEN;
+                break;
+            case State::Paused:
+                borderColor = COLOR_ORANGE;
+                break;
+            default:
+                Error("Unknown state");
+                break;
+        }
         lcd.Fill_Rect(
             m_x + BORDER_PADDING,
             m_y + BORDER_PADDING,

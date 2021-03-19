@@ -8,6 +8,9 @@ struct Message {
         OK,
         Error, // If the type is Error, the message is followed by a newline-terminated string
         Launch,
+        Pause,
+        Resume,
+        Cancel,
     } type;
     uint8_t iWidget;
 };

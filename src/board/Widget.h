@@ -19,6 +19,7 @@ class Widget {
     enum class State : uint8_t {
         Default = 0,
         Active,
+        Paused,
     } m_state;
     enum DrawFlags : uint8_t {
         None = 0x00,
@@ -46,5 +47,6 @@ public:
     void SetProgress(const uint8_t percent);
 
     void Tap(Message* message);
+    void TapElsewhere(Message *message);
     void Draw(const LCDWIKI_KBV& lcd);
 };

@@ -92,11 +92,25 @@ void loop()
     });
 
     if (iTouch != Touch::INVALID_INDEX) {
-        Message message = {};
-        g_widgets[iTouch].Tap(&message);
-        if (message.type != Message::Type::None) {
-            message.iWidget = iTouch;
-            Serial.write((const uint8_t*)&message, sizeof(message));
+        uint8_t bOutsideTapRegistered = false;
+        for (uint8_t i = 0; i < WIDGETS_COUNT; i++) {
+            if (i != iTouch) {
+                Message message = {};
+                g_widgets[i].TapElsewhere(&message);
+                if (message.type != Message::Type::None) {
+                    message.iWidget = i;
+                    Serial.write((const uint8_t*)&message, sizeof(message));
+                    bOutsideTapRegistered = true;
+                }
+            }
+        }
+        if (!bOutsideTapRegistered) {
+            Message message = {};
+            g_widgets[iTouch].Tap(&message);
+            if (message.type != Message::Type::None) {
+                message.iWidget = iTouch;
+                Serial.write((const uint8_t*)&message, sizeof(message));
+            }
         }
     }
 

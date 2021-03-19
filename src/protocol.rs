@@ -11,6 +11,9 @@ pub enum Message {
     OK,
     Error,
     Launch(u8),
+    Pause(u8),
+    Resume(u8),
+    Cancel(u8),
 }
 
 impl Command {
@@ -57,6 +60,9 @@ impl Message {
             1 => Message::OK,
             2 => Message::Error,
             3 => Message::Launch(bytes[1]),
+            4 => Message::Pause(bytes[1]),
+            5 => Message::Resume(bytes[1]),
+            6 => Message::Cancel(bytes[1]),
             _ => panic!("Invalid message type {}", bytes[0]),
         }
     }
