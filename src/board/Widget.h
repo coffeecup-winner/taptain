@@ -11,8 +11,8 @@ class Widget {
 
     const uint16_t m_x;
     const uint16_t m_y;
-    const uint16_t m_width;
-    const uint16_t m_height;
+    const uint8_t m_width;
+    const uint8_t m_height;
     char m_name[MAX_TEXT_LEN];
     uint8_t m_prevPercentProgress;
     uint8_t m_percentProgress;
@@ -30,7 +30,7 @@ class Widget {
     } m_drawFlags;
 
 public:
-    Widget(const uint16_t x, const uint16_t y, const uint16_t width, const uint16_t height)
+    Widget(const uint16_t x, const uint16_t y, const uint8_t width, const uint8_t height)
         : m_x(x)
         , m_y(y)
         , m_width(width)
