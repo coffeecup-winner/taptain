@@ -1,0 +1,30 @@
+default_view = "default"
+
+[[views]]
+name = "default"
+width = 2
+height = 3
+
+[[views.widgets]]
+name = "01234567890123456789"
+task.type = "example"
+
+[[views.widgets]]
+name = "TEST WIDGET"
+task.type = "example"
+
+[[views.widgets]]
+name = "MORE TESTS"
+task.type = "example"
+
+[[views.widgets]]
+name = "RUN A PROCESS"
+task.type = "example"
+
+[[views.widgets]]
+name = "BREW SOME TEA"
+task.type = "example"
+
+[[views.widgets]]
+name = "LAUNCH THE SATELLITE"
+task.type = "example"

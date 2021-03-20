@@ -1,11 +1,11 @@
 use std::sync::{Arc, Mutex};
 
-use crate::{comms::Connection, protocol::Message};
+use crate::{comms::Connection, config::Config, protocol::Message};
 
 pub type AMConnection = Arc<Mutex<Connection>>;
 
 pub trait MessageHandler {
-    fn new(connection: AMConnection) -> Self;
+    fn new(connection: AMConnection, config: Config) -> Self;
     fn init(&mut self) -> std::io::Result<()>;
     fn launch(&mut self, i_widget: u8) -> std::io::Result<()>;
     fn pause(&mut self, i_widget: u8) -> std::io::Result<()>;
@@ -19,11 +19,11 @@ pub struct EventProcessor<MH: MessageHandler> {
 }
 
 impl<MH: MessageHandler> EventProcessor<MH> {
-    pub fn new(connection: Connection) -> EventProcessor<MH> {
+    pub fn new(connection: Connection, config: Config) -> EventProcessor<MH> {
         let connection = Arc::new(Mutex::new(connection));
         EventProcessor {
             connection: connection.clone(),
-            handler: MH::new(connection),
+            handler: MH::new(connection, config),
         }
     }
 
