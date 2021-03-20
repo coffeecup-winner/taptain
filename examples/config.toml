@@ -1,4 +1,4 @@
-default_view = "default"
+default_view = "cpu"
 
 [[views]]
 name = "default"
@@ -28,3 +28,7 @@ task.type = "example"
 [[views.widgets]]
 name = "LAUNCH THE SATELLITE"
 task.type = "example"
+
+[[views]]
+name = "cpu"
+builtin = true

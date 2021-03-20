@@ -1,16 +1,17 @@
 use std::collections::HashMap;
 
 use crate::{
-    config::{Config, ViewConfig},
+    config::Config,
     events::{AMConnection, MessageHandler},
     protocol::Command,
     tasks::Task,
+    views::View,
 };
 
 pub struct TaptainBackend {
     connection: AMConnection,
-    view: ViewConfig,
-    _views: HashMap<String, ViewConfig>,
+    view: View,
+    _views: HashMap<String, View>,
     tasks: Vec<Option<Task>>,
 }
 
@@ -29,6 +30,10 @@ pub struct WidgetConnection {
 }
 
 impl WidgetConnection {
+    pub fn index(&self) -> u8 {
+        self.i_widget
+    }
+
     pub fn set_progress(&self, progress: u8) -> std::io::Result<()> {
         self.connection
             .lock()
@@ -40,8 +45,15 @@ impl WidgetConnection {
 impl MessageHandler for TaptainBackend {
     fn new(connection: AMConnection, config: Config) -> Self {
         let mut views = HashMap::new();
-        for view in config.views {
-            views.insert(view.name.clone(), view);
+        for v in config.views {
+            let view = if v.builtin {
+                crate::views::get_view_builder(&v.name)
+                    .expect("Programmer error: should have been caught by config validation")
+                    .build_view()
+            } else {
+                View::new(v.widgets)
+            };
+            views.insert(v.name.clone(), view);
         }
         let view = views.get(&config.default_view).unwrap().clone();
         TaptainBackend {
@@ -55,7 +67,7 @@ impl MessageHandler for TaptainBackend {
     fn init(&mut self) -> std::io::Result<()> {
         let commands = self
             .view
-            .widgets
+            .widgets()
             .iter()
             .enumerate()
             .map(|(i, w)| Command::Init(i as u8, w.name.clone()))
@@ -66,11 +78,11 @@ impl MessageHandler for TaptainBackend {
 
     fn launch(&mut self, i_widget: u8) -> std::io::Result<()> {
         self.ensure_size_for_index(i_widget);
-        if i_widget as usize > self.view.widgets.len() {
+        if i_widget as usize > self.view.widgets().len() {
             return Ok(());
         }
         let launcher =
-            crate::tasks::get_task_launcher(&self.view.widgets[i_widget as usize].task.type_)
+            crate::tasks::get_task_launcher(&self.view.widgets()[i_widget as usize].task.type_)
                 .expect("Programmer error: should have been caught by config validation");
         let task = launcher.launch(WidgetConnection {
             connection: self.connection.clone(),

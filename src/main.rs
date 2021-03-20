@@ -4,6 +4,7 @@ mod core;
 mod events;
 mod protocol;
 mod tasks;
+mod views;
 
 use crate::{comms::Connection, config::Config, core::TaptainBackend, events::EventProcessor};
 
