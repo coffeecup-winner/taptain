@@ -17,6 +17,7 @@ struct Command {
         BeginBatch,
         EndBatch,
         Progress,
+        Configure,
     } type;
     union {
         struct {
@@ -27,6 +28,10 @@ struct Command {
             uint8_t iWidget;
             uint8_t percent;
         } progress;
+        struct {
+            uint8_t width;
+            uint8_t height;
+        } configure;
     };
 };
 
@@ -89,6 +94,10 @@ public:
             case Command::Type::Progress:
                 assert(m_buffer.GetData(&pCommand->progress.iWidget));
                 assert(m_buffer.GetData(&pCommand->progress.percent));
+                return true;
+            case Command::Type::Configure:
+                assert(m_buffer.GetData(&pCommand->configure.width));
+                assert(m_buffer.GetData(&pCommand->configure.height));
                 return true;
             default:
                 Error("Invalid command type received from host");

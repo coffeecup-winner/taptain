@@ -9,10 +9,10 @@
 class Widget {
     static constexpr uint16_t MAX_TEXT_LEN = 21;
 
-    const uint16_t m_x;
-    const uint16_t m_y;
-    const uint8_t m_width;
-    const uint8_t m_height;
+    uint16_t m_x;
+    uint16_t m_y;
+    uint8_t m_width;
+    uint8_t m_height;
     char m_name[MAX_TEXT_LEN];
     uint8_t m_prevPercentProgress;
     uint8_t m_percentProgress;
@@ -30,6 +30,18 @@ class Widget {
     } m_drawFlags;
 
 public:
+    Widget()
+        : m_x()
+        , m_y()
+        , m_width()
+        , m_height()
+        , m_name()
+        , m_prevPercentProgress()
+        , m_percentProgress()
+        , m_state()
+        , m_drawFlags()
+    { }
+
     Widget(const uint16_t x, const uint16_t y, const uint8_t width, const uint8_t height)
         : m_x(x)
         , m_y(y)

@@ -51,7 +51,7 @@ impl MessageHandler for TaptainBackend {
                     .expect("Programmer error: should have been caught by config validation")
                     .build_view()
             } else {
-                View::new(v.widgets)
+                View::new(v.widgets, v.width.unwrap(), v.height.unwrap())
             };
             views.insert(v.name.clone(), view);
         }
@@ -65,13 +65,10 @@ impl MessageHandler for TaptainBackend {
     }
 
     fn init(&mut self) -> std::io::Result<()> {
-        let commands = self
-            .view
-            .widgets()
-            .iter()
-            .enumerate()
-            .map(|(i, w)| Command::Init(i as u8, w.name.clone()))
-            .collect::<Vec<_>>();
+        let mut commands = vec![Command::Configure(self.view.width(), self.view.height())];
+        for (i, w) in self.view.widgets().iter().enumerate() {
+            commands.push(Command::Init(i as u8, w.name.clone()));
+        }
         self.connection.lock().unwrap().send(&commands)?;
         Ok(())
     }

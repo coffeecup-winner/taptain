@@ -4,6 +4,7 @@ pub enum Command {
     BeginBatch,
     EndBatch,
     Progress(u8, u8),
+    Configure(u8, u8),
 }
 
 #[derive(Debug)]
@@ -45,6 +46,11 @@ impl Command {
                 result.push(3);
                 result.push(*i_widget);
                 result.push(*percent);
+            }
+            Command::Configure(width, height) => {
+                result.push(4);
+                result.push(*width);
+                result.push(*height);
             }
         }
         result
