@@ -1,5 +1,6 @@
 use crate::{
     config::{ViewConfig, WidgetConfig},
+    protocol::WidgetType,
     tasks::TaskLauncher,
 };
 
@@ -41,6 +42,7 @@ impl View {
 #[derive(Debug, Clone)]
 pub struct Widget {
     pub name: String,
+    pub type_: WidgetType,
     pub task_launcher: Box<dyn TaskLauncher>,
 }
 
@@ -72,6 +74,11 @@ pub fn build_view(config: ViewConfig) -> Option<View> {
 fn build_widget(config: WidgetConfig) -> Option<Widget> {
     Some(Widget {
         name: config.name,
+        type_: match config.type_.as_str() {
+            "display" => Some(WidgetType::Display),
+            "task" => Some(WidgetType::Task),
+            _ => None,
+        }?,
         task_launcher: crate::tasks::get_task_launcher(&config.task.type_)?,
     })
 }

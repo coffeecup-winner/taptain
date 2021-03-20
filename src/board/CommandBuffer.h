@@ -22,6 +22,7 @@ struct Command {
     union {
         struct {
             uint8_t iWidget;
+            uint8_t type;
             char name[21];
         } init;
         struct {
@@ -84,6 +85,7 @@ public:
         switch (type) {
             case Command::Type::Init:
                 assert(m_buffer.GetData(&pCommand->init.iWidget));
+                assert(m_buffer.GetData(&pCommand->init.type));
                 for (uint8_t i = 0; i < sizeof(Command::init.name); i++) {
                     assert(m_buffer.GetData(&pCommand->init.name[i]));
                 }

@@ -15,6 +15,13 @@ void Widget::Reset()
     m_drawFlags = DrawFlags::All;
 }
 
+void Widget::SetType(const uint8_t type)
+{
+    assert(type < (uint8_t)Type::COUNT);
+    m_type = (Type)type;
+    // We expect this to be set once on init and never change, so not setting any draw flags
+}
+
 void Widget::SetName(const char* name)
 {
     strncpy(m_name, name, MAX_TEXT_LEN);
@@ -30,6 +37,9 @@ void Widget::SetProgress(const uint8_t percent)
 
 void Widget::Tap(Message* message)
 {
+    if (m_type == Type::Display) {
+        return;
+    }
     switch (m_state) {
         case State::Default:
             m_state = State::Active;
@@ -65,6 +75,9 @@ void Widget::Tap(Message* message)
 
 void Widget::TapElsewhere(Message *message)
 {
+    if (m_type == Type::Display) {
+        return;
+    }
     switch (m_state) {
         case State::Default:
         case State::Active:

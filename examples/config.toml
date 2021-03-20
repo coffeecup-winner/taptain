@@ -7,26 +7,32 @@ height = 3
 
 [[views.widgets]]
 name = "01234567890123456789"
+type = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "TEST WIDGET"
+type = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "MORE TESTS"
+type = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "RUN A PROCESS"
+type = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "BREW SOME TEA"
+type = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "LAUNCH THE SATELLITE"
+type = "task"
 task.type = "example"
 
 [[views]]

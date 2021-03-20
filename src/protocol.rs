@@ -1,13 +1,19 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Command {
-    Init(u8, String),
+    Init(u8, WidgetType, String),
     BeginBatch,
     EndBatch,
     Progress(u8, u8),
     Configure(u8, u8),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
+pub enum WidgetType {
+    Display,
+    Task,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub enum Message {
     OK,
     Error,
@@ -21,9 +27,13 @@ impl Command {
     pub fn to_protocol_bytes(&self) -> Vec<u8> {
         let mut result = vec![];
         match self {
-            Command::Init(i_wigdet, text) => {
+            Command::Init(i_wigdet, type_, text) => {
                 result.push(0);
                 result.push(*i_wigdet);
+                result.push(match type_ {
+                    WidgetType::Display => 0,
+                    WidgetType::Task => 1,
+                });
                 let slice = if text.len() > 20 {
                     &text[0..20]
                 } else {
@@ -34,7 +44,7 @@ impl Command {
                     result.push(0);
                 }
                 result.push(0);
-                assert!(result.len() == 23);
+                assert!(result.len() == 24);
             }
             Command::BeginBatch => {
                 result.push(1);

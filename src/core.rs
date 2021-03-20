@@ -62,9 +62,17 @@ impl MessageHandler for TaptainBackend {
     fn init(&mut self) -> std::io::Result<()> {
         let mut commands = vec![Command::Configure(self.view.width(), self.view.height())];
         for (i, w) in self.view.widgets().iter().enumerate() {
-            commands.push(Command::Init(i as u8, w.name.clone()));
+            commands.push(Command::Init(i as u8, w.type_, w.name.clone()));
         }
         self.connection.lock().unwrap().send(&commands)?;
+        for (i, w) in self.view.widgets().iter().enumerate() {
+            if w.task_launcher.auto_launch() {
+                w.task_launcher.launch(WidgetConnection {
+                    connection: self.connection.clone(),
+                    i_widget: i as u8,
+                });
+            }
+        }
         Ok(())
     }
 

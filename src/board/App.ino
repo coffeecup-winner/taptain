@@ -54,6 +54,7 @@ void loop()
         switch (cmd.type) {
             case Command::Type::Init:
                 if (cmd.init.iWidget < g_widgetConfig.count) {
+                    g_widgets[cmd.init.iWidget].SetType(cmd.init.type);
                     g_widgets[cmd.init.iWidget].SetName(cmd.init.name);
                     g_widgets[cmd.init.iWidget].Reset();
                 }

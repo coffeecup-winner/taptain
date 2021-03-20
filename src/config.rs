@@ -20,6 +20,8 @@ pub struct ViewConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub struct WidgetConfig {
     pub name: String,
+    #[serde(rename(deserialize = "type"))]
+    pub type_: String,
     pub task: TaskConfig,
 }
 

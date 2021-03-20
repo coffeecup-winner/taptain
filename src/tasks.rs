@@ -65,6 +65,7 @@ impl Task {
 }
 
 pub trait TaskLauncher: std::fmt::Debug + dyn_clone::DynClone {
+    fn auto_launch(&self) -> bool;
     fn launch(&self, connection: WidgetConnection) -> Task;
 }
 dyn_clone::clone_trait_object!(TaskLauncher);
@@ -72,6 +73,10 @@ dyn_clone::clone_trait_object!(TaskLauncher);
 #[derive(Debug, Clone)]
 struct ExampleTaskLauncher;
 impl TaskLauncher for ExampleTaskLauncher {
+    fn auto_launch(&self) -> bool {
+        false
+    }
+
     fn launch(&self, connection: WidgetConnection) -> Task {
         Task::start(move |state| -> std::io::Result<()> {
             for i in 1..=10 {

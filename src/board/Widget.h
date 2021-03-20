@@ -16,6 +16,12 @@ class Widget {
     char m_name[MAX_TEXT_LEN];
     uint8_t m_prevPercentProgress;
     uint8_t m_percentProgress;
+    enum class Type : uint8_t {
+        Display = 0,
+        Task,
+
+        COUNT,
+    } m_type;
     enum class State : uint8_t {
         Default = 0,
         Active,
@@ -38,6 +44,7 @@ public:
         , m_name()
         , m_prevPercentProgress()
         , m_percentProgress()
+        , m_type()
         , m_state()
         , m_drawFlags()
     { }
@@ -50,11 +57,13 @@ public:
         , m_name()
         , m_prevPercentProgress(0)
         , m_percentProgress(0)
+        , m_type(Type::Display)
         , m_state(State::Default)
         , m_drawFlags(DrawFlags::All)
     { }
 
     void Reset();
+    void SetType(const uint8_t type);
     void SetName(const char* name);
     void SetProgress(const uint8_t percent);
 
