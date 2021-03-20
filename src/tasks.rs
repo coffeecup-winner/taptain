@@ -64,10 +64,12 @@ impl Task {
     }
 }
 
-pub trait TaskLauncher {
+pub trait TaskLauncher: std::fmt::Debug + dyn_clone::DynClone {
     fn launch(&self, connection: WidgetConnection) -> Task;
 }
+dyn_clone::clone_trait_object!(TaskLauncher);
 
+#[derive(Debug, Clone)]
 struct ExampleTaskLauncher;
 impl TaskLauncher for ExampleTaskLauncher {
     fn launch(&self, connection: WidgetConnection) -> Task {
@@ -86,7 +88,6 @@ impl TaskLauncher for ExampleTaskLauncher {
 
 pub fn get_task_launcher(name: &str) -> Option<Box<dyn TaskLauncher>> {
     match name {
-        "cpu" => Some(Box::new(crate::builtin::cpu::CpuTaskLauncher)),
         "example" => Some(Box::new(ExampleTaskLauncher)),
         _ => None,
     }

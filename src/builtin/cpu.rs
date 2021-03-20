@@ -1,10 +1,9 @@
 use sysinfo::{ProcessorExt, RefreshKind, System, SystemExt};
 
 use crate::{
-    config::{TaskConfig, WidgetConfig},
     core::WidgetConnection,
     tasks::{Task, TaskControl, TaskLauncher},
-    views::{View, ViewBuilder},
+    views::{View, ViewBuilder, Widget},
 };
 
 pub struct CpuViewBuilder;
@@ -13,19 +12,18 @@ impl ViewBuilder for CpuViewBuilder {
         let mut widgets = vec![];
         let cpu_count = System::new().get_processors().len().min(24);
         for i in 0..cpu_count {
-            widgets.push(WidgetConfig {
+            widgets.push(Widget {
                 name: format!("CPU {}", i),
-                task: TaskConfig {
-                    type_: "cpu".to_owned(),
-                },
+                task_launcher: Box::new(CpuTaskLauncher),
             });
         }
         let (width, height) = crate::views::widget_count_to_width_height(cpu_count as u8);
-        View::new(widgets, width, height)
+        View::new("cpu".to_owned(), widgets, width, height)
     }
 }
 
-pub struct CpuTaskLauncher;
+#[derive(Debug, Clone)]
+struct CpuTaskLauncher;
 impl TaskLauncher for CpuTaskLauncher {
     fn launch(&self, connection: WidgetConnection) -> Task {
         Task::start(move |state| -> std::io::Result<()> {

@@ -1,22 +1,31 @@
-use crate::config::WidgetConfig;
+use crate::{
+    config::{ViewConfig, WidgetConfig},
+    tasks::TaskLauncher,
+};
 
 #[derive(Debug, Clone)]
 pub struct View {
-    widgets: Vec<WidgetConfig>,
+    name: String,
+    widgets: Vec<Widget>,
     width: u8,
     height: u8,
 }
 
 impl View {
-    pub fn new(widgets: Vec<WidgetConfig>, width: u8, height: u8) -> View {
+    pub fn new(name: String, widgets: Vec<Widget>, width: u8, height: u8) -> View {
         View {
+            name,
             widgets,
             width,
             height,
         }
     }
 
-    pub fn widgets(&self) -> &[WidgetConfig] {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn widgets(&self) -> &[Widget] {
         &self.widgets[..]
     }
 
@@ -29,15 +38,42 @@ impl View {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Widget {
+    pub name: String,
+    pub task_launcher: Box<dyn TaskLauncher>,
+}
+
 pub trait ViewBuilder {
     fn build_view(&self) -> View;
 }
 
-pub fn get_view_builder(name: &str) -> Option<Box<dyn ViewBuilder>> {
-    match name {
-        "cpu" => Some(Box::new(crate::builtin::cpu::CpuViewBuilder)),
-        _ => None,
-    }
+pub fn build_view(config: ViewConfig) -> Option<View> {
+    Some(if config.builtin {
+        let builder = match config.name.as_str() {
+            "cpu" => Some(Box::new(crate::builtin::cpu::CpuViewBuilder)),
+            _ => None,
+        };
+        builder?.build_view()
+    } else {
+        View::new(
+            config.name,
+            config
+                .widgets
+                .into_iter()
+                .map(|w| build_widget(w))
+                .collect::<Option<Vec<_>>>()?,
+            config.width.unwrap(),
+            config.height.unwrap(),
+        )
+    })
+}
+
+fn build_widget(config: WidgetConfig) -> Option<Widget> {
+    Some(Widget {
+        name: config.name,
+        task_launcher: crate::tasks::get_task_launcher(&config.task.type_)?,
+    })
 }
 
 pub fn widget_count_to_width_height(count: u8) -> (u8, u8) {

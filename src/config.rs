@@ -51,8 +51,8 @@ impl Config {
                     view.builtin,
                     "View must be builtin if width/height are not set"
                 );
-                if let None = crate::views::get_view_builder(&view.name) {
-                    panic!("Unknown view type {}", view.name);
+                if let None = crate::views::build_view(view.clone()) {
+                    panic!("Failed to build view {}", view.name);
                 }
             }
             for widget in &view.widgets {

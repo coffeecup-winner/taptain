@@ -46,14 +46,9 @@ impl MessageHandler for TaptainBackend {
     fn new(connection: AMConnection, config: Config) -> Self {
         let mut views = HashMap::new();
         for v in config.views {
-            let view = if v.builtin {
-                crate::views::get_view_builder(&v.name)
-                    .expect("Programmer error: should have been caught by config validation")
-                    .build_view()
-            } else {
-                View::new(v.widgets, v.width.unwrap(), v.height.unwrap())
-            };
-            views.insert(v.name.clone(), view);
+            let view = crate::views::build_view(v)
+                .expect("Programmer error: should have been caught by config validation");
+            views.insert(view.name().to_owned(), view);
         }
         let view = views.get(&config.default_view).unwrap().clone();
         TaptainBackend {
@@ -78,9 +73,7 @@ impl MessageHandler for TaptainBackend {
         if i_widget as usize > self.view.widgets().len() {
             return Ok(());
         }
-        let launcher =
-            crate::tasks::get_task_launcher(&self.view.widgets()[i_widget as usize].task.type_)
-                .expect("Programmer error: should have been caught by config validation");
+        let launcher = &self.view.widgets()[i_widget as usize].task_launcher;
         let task = launcher.launch(WidgetConnection {
             connection: self.connection.clone(),
             i_widget,
