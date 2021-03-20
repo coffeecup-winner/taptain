@@ -1,3 +1,4 @@
+mod builtin;
 mod comms;
 mod config;
 mod core;

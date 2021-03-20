@@ -3,8 +3,6 @@ use std::{
     thread::JoinHandle,
 };
 
-use sysinfo::{ProcessorExt, RefreshKind, System, SystemExt};
-
 use crate::core::WidgetConnection;
 
 #[derive(Debug, Clone, Copy)]
@@ -15,7 +13,7 @@ pub enum TaskState {
 }
 
 // Task state trait to be used by the task thread
-trait TaskControl {
+pub trait TaskControl {
     // This function will block if the task is paused
     fn should_exit(&self) -> bool;
 }
@@ -86,26 +84,9 @@ impl TaskLauncher for ExampleTaskLauncher {
     }
 }
 
-struct CpuTaskLauncher;
-impl TaskLauncher for CpuTaskLauncher {
-    fn launch(&self, connection: WidgetConnection) -> Task {
-        Task::start(move |state| -> std::io::Result<()> {
-            let mut system = System::new_with_specifics(RefreshKind::new().with_cpu());
-            system.get_processors()[connection.index() as usize].get_cpu_usage();
-            while !state.should_exit() {
-                std::thread::sleep(std::time::Duration::from_secs(1));
-                system.refresh_cpu();
-                let usage = system.get_processors()[connection.index() as usize].get_cpu_usage();
-                connection.set_progress(usage as u8)?;
-            }
-            Ok(())
-        })
-    }
-}
-
 pub fn get_task_launcher(name: &str) -> Option<Box<dyn TaskLauncher>> {
     match name {
-        "cpu" => Some(Box::new(CpuTaskLauncher)),
+        "cpu" => Some(Box::new(crate::builtin::cpu::CpuTaskLauncher)),
         "example" => Some(Box::new(ExampleTaskLauncher)),
         _ => None,
     }

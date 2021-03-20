@@ -1,6 +1,4 @@
-use sysinfo::{System, SystemExt};
-
-use crate::config::{TaskConfig, WidgetConfig};
+use crate::config::WidgetConfig;
 
 #[derive(Debug, Clone)]
 pub struct View {
@@ -35,37 +33,14 @@ pub trait ViewBuilder {
     fn build_view(&self) -> View;
 }
 
-struct CpuViewBuilder;
-
-impl ViewBuilder for CpuViewBuilder {
-    fn build_view(&self) -> View {
-        let mut widgets = vec![];
-        let cpu_count = System::new().get_processors().len().min(24);
-        for i in 0..cpu_count {
-            widgets.push(WidgetConfig {
-                name: format!("CPU {}", i),
-                task: TaskConfig {
-                    type_: "cpu".to_owned(),
-                },
-            });
-        }
-        let (width, height) = widget_count_to_width_height(cpu_count as u8);
-        View {
-            widgets,
-            width,
-            height,
-        }
-    }
-}
-
 pub fn get_view_builder(name: &str) -> Option<Box<dyn ViewBuilder>> {
     match name {
-        "cpu" => Some(Box::new(CpuViewBuilder)),
+        "cpu" => Some(Box::new(crate::builtin::cpu::CpuViewBuilder)),
         _ => None,
     }
 }
 
-fn widget_count_to_width_height(count: u8) -> (u8, u8) {
+pub fn widget_count_to_width_height(count: u8) -> (u8, u8) {
     match count {
         0 => (0, 0),
         1 | 2 | 3 | 4 | 5 | 6 => (2, 3),
