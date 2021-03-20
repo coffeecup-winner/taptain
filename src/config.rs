@@ -22,7 +22,10 @@ pub struct WidgetConfig {
     pub name: String,
     #[serde(rename(deserialize = "type"))]
     pub type_: String,
-    pub task: TaskConfig,
+    pub action: String,
+    #[serde(default)]
+    pub target: String,
+    pub task: Option<TaskConfig>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -61,8 +64,22 @@ impl Config {
                 if widget.name.len() > 20 {
                     panic!("Widget name is limited by 20 characters");
                 }
-                if let None = crate::tasks::get_task_launcher(&widget.task.type_) {
-                    panic!("Unknown task type {}", widget.task.type_);
+                match widget.type_.as_str() {
+                    "display" => {}
+                    "task" => {}
+                    unknown => panic!("Unknown widget type {}", unknown),
+                }
+                match widget.action.as_str() {
+                    "task" => match &widget.task {
+                        Some(task) => {
+                            if let None = crate::tasks::get_task_launcher(&task.type_) {
+                                panic!("Unknown task type {}", task.type_);
+                            }
+                        }
+                        None => panic!("Widget task is not set"),
+                    },
+                    "goto" => assert!(widget.target.len() > 0, "Widget goto target is not set"),
+                    _ => panic!("Unknown widget type {}", widget.type_),
                 }
             }
         }

@@ -1,38 +1,62 @@
-default_view = "cpu"
+default_view = "home"
 
 [[views]]
-name = "default"
+name = "home"
+width = 2
+height = 3
+
+[[views.widgets]]
+name = "CPU LOAD"
+type = "task"
+action = "goto"
+target = "cpu"
+
+[[views.widgets]]
+name = "TASKS"
+type = "task"
+action = "goto"
+target = "tasks"
+
+[[views]]
+name = "tasks"
 width = 2
 height = 3
 
 [[views.widgets]]
 name = "01234567890123456789"
 type = "task"
+action = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "TEST WIDGET"
 type = "task"
-task.type = "example"
-
-[[views.widgets]]
-name = "MORE TESTS"
-type = "task"
+action = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "RUN A PROCESS"
 type = "task"
+action = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "BREW SOME TEA"
 type = "task"
+action = "task"
 task.type = "example"
 
 [[views.widgets]]
 name = "LAUNCH THE SATELLITE"
 type = "task"
+action = "task"
+task.type = "example"
+
+[[views.widgets]]
+name = "GO BACK"
+type = "task"
+# TODO: goto home
+action = "task"
 task.type = "example"
 
 [[views]]

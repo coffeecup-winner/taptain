@@ -5,13 +5,13 @@ use crate::{
     events::{AMConnection, MessageHandler},
     protocol::Command,
     tasks::Task,
-    views::View,
+    views::{View, WidgetAction},
 };
 
 pub struct TaptainBackend {
     connection: AMConnection,
     view: View,
-    _views: HashMap<String, View>,
+    views: HashMap<String, View>,
     tasks: Vec<Option<Task>>,
 }
 
@@ -54,7 +54,7 @@ impl MessageHandler for TaptainBackend {
         TaptainBackend {
             connection,
             view,
-            _views: views,
+            views: views,
             tasks: vec![],
         }
     }
@@ -66,11 +66,14 @@ impl MessageHandler for TaptainBackend {
         }
         self.connection.lock().unwrap().send(&commands)?;
         for (i, w) in self.view.widgets().iter().enumerate() {
-            if w.task_launcher.auto_launch() {
-                w.task_launcher.launch(WidgetConnection {
-                    connection: self.connection.clone(),
-                    i_widget: i as u8,
-                });
+            match &w.action {
+                WidgetAction::Task(launcher) if launcher.auto_launch() => {
+                    launcher.launch(WidgetConnection {
+                        connection: self.connection.clone(),
+                        i_widget: i as u8,
+                    });
+                }
+                _ => {}
             }
         }
         Ok(())
@@ -81,12 +84,19 @@ impl MessageHandler for TaptainBackend {
         if i_widget as usize > self.view.widgets().len() {
             return Ok(());
         }
-        let launcher = &self.view.widgets()[i_widget as usize].task_launcher;
-        let task = launcher.launch(WidgetConnection {
-            connection: self.connection.clone(),
-            i_widget,
-        });
-        self.tasks[i_widget as usize] = Some(task);
+        match &self.view.widgets()[i_widget as usize].action {
+            WidgetAction::Task(launcher) => {
+                let task = launcher.launch(WidgetConnection {
+                    connection: self.connection.clone(),
+                    i_widget,
+                });
+                self.tasks[i_widget as usize] = Some(task);
+            }
+            WidgetAction::Goto(target) => {
+                self.view = self.views.get(target).expect("Invalid goto target").clone();
+                return self.init();
+            }
+        }
         Ok(())
     }
 

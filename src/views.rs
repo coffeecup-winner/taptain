@@ -43,7 +43,13 @@ impl View {
 pub struct Widget {
     pub name: String,
     pub type_: WidgetType,
-    pub task_launcher: Box<dyn TaskLauncher>,
+    pub action: WidgetAction,
+}
+
+#[derive(Debug, Clone)]
+pub enum WidgetAction {
+    Task(Box<dyn TaskLauncher>),
+    Goto(String),
 }
 
 pub trait ViewBuilder {
@@ -79,7 +85,13 @@ fn build_widget(config: WidgetConfig) -> Option<Widget> {
             "task" => Some(WidgetType::Task),
             _ => None,
         }?,
-        task_launcher: crate::tasks::get_task_launcher(&config.task.type_)?,
+        action: match config.action.as_str() {
+            "task" => Some(WidgetAction::Task(crate::tasks::get_task_launcher(
+                &config.task?.type_,
+            )?)),
+            "goto" => Some(WidgetAction::Goto(config.target)),
+            _ => None,
+        }?,
     })
 }
 

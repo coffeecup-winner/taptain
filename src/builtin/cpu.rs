@@ -4,7 +4,7 @@ use crate::{
     core::WidgetConnection,
     protocol::WidgetType,
     tasks::{Task, TaskControl, TaskLauncher},
-    views::{View, ViewBuilder, Widget},
+    views::{View, ViewBuilder, Widget, WidgetAction},
 };
 
 pub struct CpuViewBuilder;
@@ -16,7 +16,7 @@ impl ViewBuilder for CpuViewBuilder {
             widgets.push(Widget {
                 name: format!("CPU {}", i),
                 type_: WidgetType::Display,
-                task_launcher: Box::new(CpuTaskLauncher),
+                action: WidgetAction::Task(Box::new(CpuTaskLauncher)),
             });
         }
         let (width, height) = crate::views::widget_count_to_width_height(cpu_count as u8);
