@@ -45,19 +45,7 @@ impl Connection {
         if commands.len() != 1 {
             self.send_command(&Command::EndBatch)?;
         }
-
-        let mut new_queue = vec![];
-        loop {
-            let message = self.get_next_message()?;
-            match message {
-                None => {}
-                Some(Message::OK) => {
-                    self.message_queue.extend(new_queue);
-                    return Ok(());
-                }
-                Some(message) => new_queue.push(message),
-            }
-        }
+        Ok(())
     }
 
     pub fn get_next_message(&mut self) -> std::io::Result<Option<Message>> {
@@ -89,6 +77,7 @@ impl Connection {
     }
 
     fn send_command(&mut self, cmd: &Command) -> std::io::Result<()> {
+        // Send
         self.port.set_timeout(Duration::from_millis(100))?;
         for _ in 0..3 {
             match self
@@ -103,7 +92,20 @@ impl Connection {
                 Err(e) => return Err(e),
             }
         }
-        Ok(())
+
+        // Receive ACK + any other potential messages
+        let mut new_queue = vec![];
+        loop {
+            let message = self.get_next_message()?;
+            match message {
+                None => {}
+                Some(Message::OK) => {
+                    self.message_queue.extend(new_queue);
+                    return Ok(());
+                }
+                Some(message) => new_queue.push(message),
+            }
+        }
     }
 
     fn port_read_string(&mut self) -> std::io::Result<String> {
@@ -130,18 +132,18 @@ impl Connection {
         let mut result = vec![];
         for b in buf {
             match b {
-                0x00 => {
-                    result.push(0xff);
-                    result.push(0x00);
-                }
                 0xff => {
+                    result.push(0xfe);
                     result.push(0xff);
-                    result.push(0xff);
+                }
+                0xfe => {
+                    result.push(0xfe);
+                    result.push(0xfe);
                 }
                 _ => result.push(*b),
             }
         }
-        result.push(0x00);
+        result.push(0xff);
         result
     }
 }

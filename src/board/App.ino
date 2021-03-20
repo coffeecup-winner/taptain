@@ -36,76 +36,73 @@ void setup()
     while (!Serial);
 }
 
-struct {
-    bool bIsInBatch : 1;
-    bool bClearScreen : 1;
-} g_flags;
-
 void loop()
 {
-    // Reading command data
-    while (Serial.available()) {
-        g_cmdBuffer.Put((uint8_t)Serial.read());
-    }
+    struct {
+        bool bIsInBatch : 1;
+        bool bClearScreen : 1;
+    } flags = {};
 
-    // Processing commands
-    Command cmd;
-    while (g_cmdBuffer.GetCommand(&cmd)) {
-        switch (cmd.type) {
-            case Command::Type::Init:
-                if (cmd.init.iWidget < g_widgetConfig.count) {
-                    g_widgets[cmd.init.iWidget].SetType(cmd.init.type);
-                    g_widgets[cmd.init.iWidget].SetName(cmd.init.name);
-                    g_widgets[cmd.init.iWidget].Reset();
-                }
-                break;
-            case Command::Type::BeginBatch:
-                g_flags.bIsInBatch = true;
-                break;
-            case Command::Type::EndBatch:
-                g_flags.bIsInBatch = false;
-                break;
-            case Command::Type::Progress:
-                if (cmd.progress.iWidget < g_widgetConfig.count) {
-                    g_widgets[cmd.progress.iWidget].SetProgress(cmd.progress.percent);
-                }
-                break;
-            case Command::Type::Configure:
-                assert(cmd.configure.width <= 4);
-                assert(cmd.configure.height <= 6);
-                uint8_t i = 0;
-                const uint8_t widgetWidth = SCREEN_WIDTH / cmd.configure.width;
-                const uint8_t widgetHeight = SCREEN_HEIGHT / cmd.configure.height;
-                for (uint16_t y = 0; (y + widgetHeight) <= SCREEN_HEIGHT; y += widgetHeight) {
-                    for (uint16_t x = 0; (x + widgetWidth) <= SCREEN_WIDTH; x += widgetWidth) {
-                        g_widgets[i] = Widget(x, y, widgetWidth, widgetHeight);
-                        i++;
-                    }
-                }
-                while (i < g_widgetConfig.count) {
-                    g_widgets[i] = Widget();
-                    i++;
-                }
-                g_widgetConfig.width = cmd.configure.width;
-                g_widgetConfig.height = cmd.configure.height;
-                g_widgetConfig.count = cmd.configure.width * cmd.configure.height;
-                g_flags.bClearScreen = true;
-                break;
-            default:
-                Error("Unhandled command");
-                break;
+    // Separate command loop (in case of command batching)
+    do {
+        // Reading command data
+        while (Serial.available()) {
+            g_cmdBuffer.Put((uint8_t)Serial.read());
         }
 
-        if (!g_flags.bIsInBatch) {
+        // Processing commands
+        Command cmd;
+        while (g_cmdBuffer.GetCommand(&cmd)) {
+            switch (cmd.type) {
+                case Command::Type::Init:
+                    if (cmd.init.iWidget < g_widgetConfig.count) {
+                        g_widgets[cmd.init.iWidget].SetType(cmd.init.type);
+                        g_widgets[cmd.init.iWidget].SetName(cmd.init.name);
+                        g_widgets[cmd.init.iWidget].Reset();
+                    }
+                    break;
+                case Command::Type::BeginBatch:
+                    flags.bIsInBatch = true;
+                    break;
+                case Command::Type::EndBatch:
+                    flags.bIsInBatch = false;
+                    break;
+                case Command::Type::Progress:
+                    if (cmd.progress.iWidget < g_widgetConfig.count) {
+                        g_widgets[cmd.progress.iWidget].SetProgress(cmd.progress.percent);
+                    }
+                    break;
+                case Command::Type::Configure:
+                    assert(cmd.configure.width <= 4);
+                    assert(cmd.configure.height <= 6);
+                    uint8_t i = 0;
+                    const uint8_t widgetWidth = SCREEN_WIDTH / cmd.configure.width;
+                    const uint8_t widgetHeight = SCREEN_HEIGHT / cmd.configure.height;
+                    for (uint16_t y = 0; (y + widgetHeight) <= SCREEN_HEIGHT; y += widgetHeight) {
+                        for (uint16_t x = 0; (x + widgetWidth) <= SCREEN_WIDTH; x += widgetWidth) {
+                            g_widgets[i] = Widget(x, y, widgetWidth, widgetHeight);
+                            i++;
+                        }
+                    }
+                    while (i < g_widgetConfig.count) {
+                        g_widgets[i] = Widget();
+                        i++;
+                    }
+                    g_widgetConfig.width = cmd.configure.width;
+                    g_widgetConfig.height = cmd.configure.height;
+                    g_widgetConfig.count = cmd.configure.width * cmd.configure.height;
+                    flags.bClearScreen = true;
+                    break;
+                default:
+                    Error("Unhandled command");
+                    break;
+            }
+
             Message message = {};
             message.type = Message::Type::OK;
             Serial.write((const uint8_t*)&message, sizeof(message));
         }
-    }
-
-    if (g_flags.bIsInBatch) {
-        return;
-    }
+    } while (flags.bIsInBatch);
 
     // User input
     const uint16_t iTouch = g_touch.GetTouchIndex([&](const uint16_t x, const uint16_t y) {
@@ -138,10 +135,10 @@ void loop()
     }
 
     // Redrawing
-    if (g_flags.bClearScreen) {
+    if (flags.bClearScreen) {
         // Alternatively, erase existing instead of clearing the screen?
         g_lcd.Fill_Screen(COLOR_BACKGROUND);
-        g_flags.bClearScreen = false;
+        flags.bClearScreen = false;
     }
     for (uint8_t i = 0; i < g_widgetConfig.count; i++) {
         g_widgets[i].Draw(g_lcd);

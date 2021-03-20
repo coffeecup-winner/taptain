@@ -4,12 +4,12 @@
 
 // The command buffer allows receiving command packets from the host,
 // decoding data as follows and then parsing the commands:
-// 0x00 - end of packet
-// 0xff - escape byte:
-//   * 0x00 - 0x00
+// 0xff - end of packet
+// 0xfe - escape byte:
+//   * 0xfe - 0xfe
 //   * 0xff - 0xff
-//   * 0x01..0xfe - invalid packet
-// 0x01..0xfe - 0x01..0xfe
+//   * 0x00..0xfd - invalid packet
+// 0x00..0xfd - 0x00..0xfd
 
 struct Command {
     enum class Type : uint8_t {
@@ -45,7 +45,7 @@ public:
     void Put(const uint8_t data)
     {
         switch (data) {
-            case 0x00:
+            case 0xff:
                 if (m_bEscape) {
                     m_buffer.Put(data);
                     m_bEscape = false;
@@ -53,7 +53,7 @@ public:
                     m_buffer.Commit();
                 }
                 break;
-            case 0xff:
+            case 0xfe:
                 if (m_bEscape) {
                     m_buffer.Put(data);
                     m_bEscape = false;

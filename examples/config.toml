@@ -55,9 +55,8 @@ task.type = "example"
 [[views.widgets]]
 name = "GO BACK"
 type = "task"
-# TODO: goto home
-action = "task"
-task.type = "example"
+action = "goto"
+target = "home"
 
 [[views]]
 name = "cpu"
